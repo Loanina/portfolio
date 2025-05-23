@@ -10,8 +10,8 @@ body {
     font-weight: 400;
     font-style: normal;
     text-align: center;
-    color: #fff;
-    background: linear-gradient(45deg, #3a2223, #400a3c, #430d33, #091428);
+    color: #ffffff;
+    background-color: linear-gradient(0deg, #5fb8e4, #66e8ff, #4deaff, #23e4eb);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
 }
@@ -32,6 +32,10 @@ body {
     margin-bottom: 0.5rem;
     margin-top: 0.5em;
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.header h2{
+    text-shadow: 1.5px 1.5px 4px rgba(0, 0, 0, 0.5);
 }
 
 .header p {
@@ -62,7 +66,7 @@ body {
 
 .link-item a:hover {
     transform: scale(1.2);
-    color: #5d00a3;
+    color: #00bfff;
 }
 
 .link-item span {
@@ -72,10 +76,11 @@ body {
 
 .project {
     margin: 2rem auto;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(176, 252, 247, 0.15);
     border-radius: 15px;
     padding: 2rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .project iframe {
@@ -99,12 +104,14 @@ body {
     font-size: 2rem;
     margin-bottom: 3rem;
     margin-top: 1.5em;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .description p{
     font-size: 1.4rem;
     margin-bottom: 1rem;
     margin-top: 1em;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .description h3{
@@ -126,5 +133,5 @@ body {
     width: 100%;
     height: 100%;
     z-index: -1;
-    background-color: #0a0911;
+    background: linear-gradient(0deg, #5fb8e4, #66e8ff, #4deaff, #23e4eb);
 }

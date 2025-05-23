@@ -1,86 +1,196 @@
-function draw() {
-    con.clearRect(0, 0, WIDTH, HEIGHT);
-    for (var e = 0; e < pxs.length; e++) {
-        pxs[e].fade();
-        pxs[e].move();
-        pxs[e].draw();
+class CloudBackground {
+    constructor(canvasId, options = {}) {
+      this.config = {
+        cloudCount: 5,
+        minSpeed: 0.05,
+        maxSpeed: 0.2,
+        minScale: 0.3,
+        maxScale: 0.5,
+        opacity: 0.25,
+        cloudImages: [
+          'Images/cloud1.png',
+          'Images/cloud2.png',
+          'Images/cloud3.png',
+          'Images/cloud4.png',
+          'Images/cloud5.png',
+          'Images/cloud6.png'
+        ],
+        gradientColors: ['#56CCF2', '#2F80ED'],
+        ...options
+      };
+  
+      this.canvas = document.getElementById(canvasId);
+      if (!this.canvas) {
+        console.error(`Canvas element with id '${canvasId}' not found`);
+        return;
+      }
+  
+      this.ctx = this.canvas.getContext('2d');
+      this.clouds = [];
+      this.cloudImages = [];
+      this.animationId = null;
+  
+      this.init();
     }
-}
-
-function Circle() {
-    WIDTH = window.innerWidth;
-    HEIGHT = window.innerHeight;
-    this.s = {
-        ttl: 8000,
-        xmax: 5,
-        ymax: 2,
-        rmax: 10,
-        rt: 1,
-        xdef: 960,
-        ydef: 540,
-        xdrift: 4,
-        ydrift: 4,
-        random: true,
-        blink: true,
-    };
-    this.reset = function () {
-        this.x = this.s.random ? WIDTH * Math.random() : this.s.xdef;
-        this.y = this.s.random ? HEIGHT * Math.random() : this.s.ydef;
-        this.r = (this.s.rmax - 1) * Math.random() + 1;
-        this.dx = Math.random() * this.s.xmax * (Math.random() < 0.5 ? -1 : 1);
-        this.dy = Math.random() * this.s.ymax * (Math.random() < 0.5 ? -1 : 1);
-        this.hl = (this.s.ttl / rint) * (this.r / this.s.rmax);
-        this.rt = Math.random() * this.hl;
-        this.s.rt = Math.random() + 1;
-        this.stop = Math.random() * 0.2 + 0.4;
-        this.s.xdrift *= Math.random() * (Math.random() < 0.5 ? -1 : 1);
-        this.s.ydrift *= Math.random() * (Math.random() < 0.5 ? -1 : 1);
-    };
-    this.fade = function () {
-        this.rt += this.s.rt;
-    };
-    this.draw = function () {
-        if (this.s.blink && (this.rt <= 0 || this.rt >= this.hl)) this.s.rt = this.s.rt * -1;
-        else if (this.rt >= this.hl) this.reset();
-        var e = 1 - this.rt / this.hl;
-        con.beginPath();
-        con.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
-        con.closePath();
-        var t = this.r * e;
-        g = con.createRadialGradient(this.x, this.y, 0, this.x, this.y, t <= 0 ? 1 : t);
-        g.addColorStop(0, `rgba(255,255,255,${e})`);
-        g.addColorStop(this.stop, `rgba(77,101,181,${e * 0.6})`);
-        g.addColorStop(1, "rgba(77,101,181,0)");
-        con.fillStyle = g;
-        con.fill();
-    };
-    this.move = function () {
-        WIDTH = window.innerWidth;
-        HEIGHT = window.innerHeight;
-        this.x += (this.rt / this.hl) * this.dx;
-        this.y += (this.rt / this.hl) * this.dy;
-        if (this.x > WIDTH || this.x < 0) this.dx *= -1;
-        if (this.y > HEIGHT || this.y < 0) this.dy *= -1;
-    };
-}
-
-var WIDTH;
-var HEIGHT;
-var canvas;
-var con;
-var g;
-var pxs = [];
-var rint = 60;
-
-$(document).ready(function () {
-    WIDTH = window.innerWidth;
-    HEIGHT = window.innerHeight;
-    canvas = document.getElementById("pixie");
-    $(canvas).attr("width", WIDTH).attr("height", HEIGHT);
-    con = canvas.getContext("2d");
-    for (var e = 0; e < 100; e++) {
-        pxs[e] = new Circle();
-        pxs[e].reset();
+  
+    async init() {
+      await this.loadImages();
+      this.resizeCanvas();
+      this.createClouds();
+      this.setupEventListeners();
+      this.startAnimation();
     }
-    setInterval(draw, rint);
-});
+  
+    async loadImages() {
+        console.log("Starting to load images...");
+        const loadPromises = this.config.cloudImages.map(src => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                    console.log(`Successfully loaded: ${src}`);
+                    this.cloudImages.push(img);
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load: ${src}`);
+                    resolve();
+                };
+            });
+        });
+    
+        await Promise.all(loadPromises);
+        console.log(`Total loaded images: ${this.cloudImages.length}`);}
+  
+    resizeCanvas() {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+      this.drawBackground();
+    }
+  
+    drawBackground() {
+      const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+      gradient.addColorStop(0, this.config.gradientColors[0]);
+      gradient.addColorStop(1, this.config.gradientColors[1]);
+      
+      this.ctx.fillStyle = gradient;
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  
+    createClouds() {
+      for (let i = 0; i < this.config.cloudCount; i++) {
+        this.clouds.push(this.createCloud());
+      }
+    }
+  
+    createCloud() {
+      const cloud = {
+        image: this.cloudImages[Math.floor(Math.random() * this.cloudImages.length)],
+        scale: this.config.minScale + Math.random() * (this.config.maxScale - this.config.minScale),
+        speed: this.config.minSpeed + Math.random() * (this.config.maxSpeed - this.config.minSpeed),
+        x: 0,
+        y: 0
+      };
+  
+      this.resetCloudPosition(cloud);
+      return cloud;
+    }
+  
+    resetCloudPosition(cloud) {
+      cloud.x = Math.random() * this.canvas.width;
+      cloud.y = Math.random() * this.canvas.height * 0.7;
+      
+      if (Math.random() > 0.5) {
+        cloud.x = -200;
+      } else {
+        cloud.x = this.canvas.width + 200;
+        cloud.speed *= -1;
+      }
+    }
+  
+    updateClouds() {
+      this.clouds.forEach(cloud => {
+        cloud.x += cloud.speed;
+        
+        if ((cloud.speed > 0 && cloud.x > this.canvas.width + 200) || 
+            (cloud.speed < 0 && cloud.x < -200)) {
+          this.resetCloudPosition(cloud);
+        }
+      });
+    }
+  
+    drawClouds() {
+      this.clouds.forEach(cloud => {
+        if (!cloud.image.complete) return;
+        
+        const width = cloud.image.width * cloud.scale;
+        const height = cloud.image.height * cloud.scale;
+        
+        this.ctx.save();
+        this.ctx.globalAlpha = this.config.opacity;
+        this.ctx.drawImage(
+          cloud.image, 
+          cloud.x - width/2, 
+          cloud.y - height/2, 
+          width, 
+          height
+        );
+        this.ctx.restore();
+      });
+    }
+  
+    animate() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.drawBackground();
+      this.updateClouds();
+      this.drawClouds();
+      this.animationId = requestAnimationFrame(() => this.animate());
+    }
+  
+    startAnimation() {
+      if (!this.animationId) {
+        this.animate();
+      }
+    }
+  
+    stopAnimation() {
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
+    }
+  
+    setupEventListeners() {
+      window.addEventListener('resize', () => {
+        this.resizeCanvas();
+      });
+    }
+  
+    setCloudCount(count) {
+      this.config.cloudCount = count;
+      this.clouds = [];
+      this.createClouds();
+    }
+  
+    setSpeed(min, max) {
+      this.config.minSpeed = min;
+      this.config.maxSpeed = max;
+      this.clouds.forEach(cloud => {
+        cloud.speed = min + Math.random() * (max - min);
+      });
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    window.cloudBackground = new CloudBackground('pixie', {
+      cloudImages: [
+        'Images/cloud1.png',
+          'Images/cloud2.png',
+          'Images/cloud3.png',
+          'Images/cloud4.png',
+          'Images/cloud5.png',
+          'Images/cloud6.png'
+      ],
+      gradientColors: ['#56CCF2', '#2F80ED'],
+    });
+  });
